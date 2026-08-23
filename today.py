@@ -16,12 +16,12 @@ USER_NAME = os.environ['USER_NAME'] # 'dcwigk'
 QUERY_COUNT = {'user_getter': 0, 'follower_getter': 0, 'graph_repos_stars': 0, 'recursive_loc': 0, 'graph_commits': 0, 'loc_query': 0, 'org_list': 0, 'org_repos': 0}
 
 
-def account_uptime(created_at):
+def career_uptime(start):
     """
-    Returns the length of time since the account was created
+    Returns the length of time since the career as a software developer began
     e.g. 'XX years, XX months, XX days'
     """
-    diff = relativedelta.relativedelta(datetime.datetime.today(), created_at)
+    diff = relativedelta.relativedelta(datetime.datetime.today(), start)
     return '{} {}, {} {}, {} {}{}'.format(
         diff.years, 'year' + format_plural(diff.years), 
         diff.months, 'month' + format_plural(diff.months), 
@@ -527,11 +527,11 @@ if __name__ == '__main__':
     Based on Andrew Grant (Andrew6rant), 2022-2025; adapted for dcwigk
     """
     print('Calculation times:')
-    # define global variable for owner ID and fetch the account's creation date
+    # define global variable for owner ID, used to attribute commits
     user_data, user_time = perf_counter(user_getter, USER_NAME)
-    OWNER_ID, acc_date = user_data
+    OWNER_ID = user_data[0]
     formatter('account data', user_time)
-    age_data, age_time = perf_counter(account_uptime, datetime.datetime.strptime(acc_date, '%Y-%m-%dT%H:%M:%SZ'))
+    age_data, age_time = perf_counter(career_uptime, datetime.datetime(2024, 9, 1))
     formatter('age calculation', age_time)
     (total_loc, contrib_data), loc_time = perf_counter(loc_query, ['OWNER', 'COLLABORATOR', 'ORGANIZATION_MEMBER'], 7)
     formatter('LOC (cached)', loc_time) if total_loc[-1] else formatter('LOC (no cache)', loc_time)
