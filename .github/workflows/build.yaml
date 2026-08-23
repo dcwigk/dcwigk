@@ -8,10 +8,15 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: readme-build
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # a repo added or removed anywhere flushes the LOC cache; the resulting
+    # full recrawl takes ~25-30 minutes and must fit inside this limit
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
