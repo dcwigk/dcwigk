@@ -1,7 +1,7 @@
 [project]
 name = "dcwigk-profile"
 version = "1.0.0"
-description = "Auto-updating GitHub profile card (neofetch-style SVG)"
+description = "Auto-updating GitHub profile card (fastfetch-style SVG)"
 requires-python = ">=3.12"
 dependencies = [
     "lxml>=6",
