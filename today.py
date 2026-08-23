@@ -43,15 +43,24 @@ def format_plural(unit):
 
 def graphql_post(query, variables):
     """
-    Posts one GraphQL request. Transient 5xx answers (e.g. a stray 502 during
-    a long crawl) are retried with exponential backoff before giving up.
+    Posts one GraphQL request. Transient failures - 5xx answers, timeouts,
+    dropped connections - are retried with exponential backoff. Without the
+    request timeout a dead connection would hang the run forever.
     """
+    request, last_error = None, None
     for attempt in range(5):
-        request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables':variables}, headers=HEADERS)
+        try:
+            request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables':variables}, headers=HEADERS, timeout=30)
+        except requests.exceptions.RequestException as error:
+            last_error = error
+            time.sleep(2 ** attempt)
+            continue
         if request.status_code < 500:
             return request
         time.sleep(2 ** attempt)
-    return request
+    if request is not None:
+        return request
+    raise last_error
 
 
 def simple_request(func_name, query, variables):
@@ -158,7 +167,11 @@ def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, delet
         }
     }'''
     variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor}
-    request = graphql_post(query, variables) # not simple_request(), because the file must be saved before raising Exception
+    try:
+        request = graphql_post(query, variables) # not simple_request(), because the file must be saved before raising
+    except requests.exceptions.RequestException:
+        force_close_file(data, cache_comment) # saves what is currently in the file before this program crashes
+        raise
     if request.status_code == 200:
         if request.json()['data']['repository']['defaultBranchRef'] != None: # Only count commits if repo isn't empty
             return loc_counter_one_repo(owner, repo_name, data, cache_comment, request.json()['data']['repository']['defaultBranchRef']['target']['history'], addition_total, deletion_total, my_commits)
