@@ -78,9 +78,9 @@ text, tspan {white-space: pre;}
 <tspan x="510" y="390">- GitHub Stats</tspan> -—————————————————————————————-—-
 <tspan x="510" y="410" class="cc">. </tspan><tspan class="key">Repos</tspan>:<tspan class="cc" id="repo_data_dots"> .... </tspan><tspan class="value" id="repo_data">14</tspan> | <tspan class="key">Contributed</tspan>:<tspan class="cc" id="contrib_data_dots"> ............ </tspan><tspan class="value" id="contrib_data">256</tspan>
 <tspan x="510" y="430" class="cc">. </tspan><tspan class="key">Stars</tspan>:<tspan class="cc" id="star_data_dots"> ....... </tspan><tspan class="value" id="star_data">1</tspan> | <tspan class="key">Followers</tspan>:<tspan class="cc" id="follower_data_dots"> .............. </tspan><tspan class="value" id="follower_data">3</tspan>
-<tspan x="510" y="450" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="commit_data_dots"> ............................... </tspan><tspan class="value" id="commit_data">7,976</tspan>
-<tspan x="510" y="470" class="cc">. </tspan><tspan class="key">Lines of Code</tspan>:<tspan class="cc" id="loc_data_dots"> .................... </tspan><tspan class="value" id="loc_data">27,531,949</tspan>
-<tspan x="510" y="490" class="cc">. </tspan><tspan class="key">Churn</tspan>: ( <tspan class="addColor" id="loc_add">40,604,798</tspan><tspan class="addColor">++</tspan>, <tspan class="delColor" id="loc_del">13,072,849</tspan><tspan class="delColor">--</tspan> )
+<tspan x="510" y="450" class="cc">. </tspan><tspan class="key">Commits</tspan>:<tspan class="cc" id="commit_data_dots"> ............................... </tspan><tspan class="value" id="commit_data">7,983</tspan>
+<tspan x="510" y="470" class="cc">. </tspan><tspan class="key">Lines of Code</tspan>:<tspan class="cc" id="loc_data_dots"> .................... </tspan><tspan class="value" id="loc_data">27,532,123</tspan>
+<tspan x="510" y="490" class="cc">. </tspan><tspan class="key">Churn</tspan>: ( <tspan class="addColor" id="loc_add">40,605,075</tspan><tspan class="addColor">++</tspan>, <tspan class="delColor" id="loc_del">13,072,952</tspan><tspan class="delColor">--</tspan> )
 <tspan x="510" y="510"><tspan fill="#45475a">██████</tspan><tspan fill="#f38ba8">██████</tspan><tspan fill="#a6e3a1">██████</tspan><tspan fill="#f9e2af">██████</tspan><tspan fill="#89b4fa">██████</tspan><tspan fill="#f5c2e7">██████</tspan><tspan fill="#94e2d5">██████</tspan><tspan fill="#bac2de">██████</tspan></tspan>
 </text>
 </svg>
