@@ -43,9 +43,10 @@ def format_plural(unit):
 
 def graphql_post(query, variables):
     """
-    Posts one GraphQL request. Transient failures - 5xx answers, timeouts,
-    dropped connections - are retried with exponential backoff. Without the
-    request timeout a dead connection would hang the run forever.
+    Posts one GraphQL request. Transient failures - 5xx answers, bodies that
+    are not JSON, timeouts, dropped connections - are retried with exponential
+    backoff. Without the request timeout a dead connection would hang the run
+    forever.
     """
     request, last_error = None, None
     for attempt in range(5):
@@ -56,7 +57,11 @@ def graphql_post(query, variables):
             time.sleep(2 ** attempt)
             continue
         if request.status_code < 500:
-            return request
+            try:
+                request.json()
+                return request
+            except ValueError: # GitHub sporadically answers 200 with an empty or truncated body
+                pass
         time.sleep(2 ** attempt)
     if request is not None:
         return request
