@@ -28,6 +28,7 @@ jobs:
       - name: Update profile SVGs
         env:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          CACHE_SALT: ${{ secrets.CACHE_SALT }}
           USER_NAME: dcwigk
         run: uv run today.py
       - name: Commit and push

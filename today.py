@@ -5,14 +5,18 @@ import os
 from lxml import etree
 import time
 import hashlib
+import hmac
 
 # Based on Andrew6rant/Andrew6rant by Andrew Grant, adapted for dcwigk.
 #
 # ACCESS_TOKEN: classic personal access token with scopes repo, read:org, read:user.
 # A classic token (not fine-grained) because the stats span the user's own repos
 # plus organization repositories, which one fine-grained token cannot cover.
+# CACHE_SALT: random secret that keys the repo-name hashes in the public cache file.
+# Changing it orphans every cache row, so the next run recounts all repositories.
 HEADERS = {'authorization': 'token '+ os.environ['ACCESS_TOKEN']}
 USER_NAME = os.environ['USER_NAME'] # 'dcwigk'
+CACHE_SALT = os.environ['CACHE_SALT'].encode('utf-8')
 QUERY_COUNT = {'user_getter': 0, 'follower_getter': 0, 'graph_repos_stars': 0, 'recursive_loc': 0, 'graph_commits': 0, 'loc_query': 0, 'org_list': 0, 'org_repos': 0}
 
 
@@ -353,12 +357,12 @@ def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
     rows = {line.split()[0]: line for line in data[comment_size:]}
     data = []
     for edge in edges:
-        repo_hash = hashlib.sha256(edge['node']['nameWithOwner'].encode('utf-8')).hexdigest()
+        repo_hash = hash_repo_name(edge['node']['nameWithOwner'])
         if repo_hash not in rows: cached = False
         data.append(rows.get(repo_hash, repo_hash + ' 0 0 0 0\n'))
     for index in range(len(edges)):
         repo_hash, commit_count, *__ = data[index].split()
-        if repo_hash == hashlib.sha256(edges[index]['node']['nameWithOwner'].encode('utf-8')).hexdigest():
+        if repo_hash == hash_repo_name(edges[index]['node']['nameWithOwner']):
             try:
                 if int(commit_count) != edges[index]['node']['defaultBranchRef']['target']['history']['totalCount']:
                     # if commit count has changed, update loc for that repo
@@ -380,7 +384,7 @@ def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
 def flush_cache(edges, filename, comment_size):
     """
     Wipes the cache file
-    This is called when the number of repositories changes or when the file is first created
+    This is called when force_cache is set
     """
     with open(filename, 'r') as f:
         data = []
@@ -389,7 +393,15 @@ def flush_cache(edges, filename, comment_size):
     with open(filename, 'w') as f:
         f.writelines(data)
         for node in edges:
-            f.write(hashlib.sha256(node['node']['nameWithOwner'].encode('utf-8')).hexdigest() + ' 0 0 0 0\n')
+            f.write(hash_repo_name(node['node']['nameWithOwner']) + ' 0 0 0 0\n')
+
+
+def hash_repo_name(name_with_owner):
+    """
+    Returns the cache key of a repository. The key is an HMAC under CACHE_SALT, because the cache
+    file is public and a plain SHA-256 of the name lets anyone confirm a guessed private repo name.
+    """
+    return hmac.new(CACHE_SALT, name_with_owner.encode('utf-8'), hashlib.sha256).hexdigest()
 
 
 def force_close_file(data, cache_comment):
