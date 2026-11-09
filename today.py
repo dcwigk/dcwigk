@@ -131,16 +131,18 @@ def graph_repos_stars(count_type, owner_affiliation, cursor=None, add_loc=0, del
 
 def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, deletion_total=0, my_commits=0, cursor=None):
     """
-    Uses GitHub's GraphQL v4 API and cursor pagination to fetch 100 commits from a repository at a time
+    Uses GitHub's GraphQL v4 API and cursor pagination to fetch 100 commits from a repository at a time.
+    The history is filtered server-side to the owner's commits: paging a bot-driven history of tens of
+    thousands of foreign commits ends in 502 timeouts at deep cursors and exhausts the job time limit.
     """
     query_count('recursive_loc')
     query = '''
-    query ($repo_name: String!, $owner: String!, $cursor: String) {
+    query ($repo_name: String!, $owner: String!, $cursor: String, $owner_id: ID!) {
         repository(name: $repo_name, owner: $owner) {
             defaultBranchRef {
                 target {
                     ... on Commit {
-                        history(first: 100, after: $cursor) {
+                        history(first: 100, after: $cursor, author: {id: $owner_id}) {
                             totalCount
                             edges {
                                 node {
@@ -166,7 +168,7 @@ def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, delet
             }
         }
     }'''
-    variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor}
+    variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor, 'owner_id': OWNER_ID['id']}
     try:
         request = graphql_post(query, variables) # not simple_request(), because the file must be saved before raising
     except requests.exceptions.RequestException:
@@ -334,14 +336,21 @@ def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
         with open(filename, 'w') as f:
             f.writelines(data)
 
-    if len(data)-comment_size != len(edges) or force_cache: # If the number of repos has changed, or force_cache is True
+    if force_cache:
         cached = False
         flush_cache(edges, filename, comment_size)
         with open(filename, 'r') as f:
             data = f.readlines()
 
     cache_comment = data[:comment_size] # save the comment block
-    data = data[comment_size:] # remove those lines
+    # Align the cache rows to edges by repo hash, so an added or removed repo costs only its own row
+    # instead of a full recrawl. A repo without a row starts at 0 commits and gets counted below.
+    rows = {line.split()[0]: line for line in data[comment_size:]}
+    data = []
+    for edge in edges:
+        repo_hash = hashlib.sha256(edge['node']['nameWithOwner'].encode('utf-8')).hexdigest()
+        if repo_hash not in rows: cached = False
+        data.append(rows.get(repo_hash, repo_hash + ' 0 0 0 0\n'))
     for index in range(len(edges)):
         repo_hash, commit_count, *__ = data[index].split()
         if repo_hash == hashlib.sha256(edges[index]['node']['nameWithOwner'].encode('utf-8')).hexdigest():
